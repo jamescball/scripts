@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 #
+# SETUP_SSH.sh
 # Harden SSH on Ubuntu using a given public key,
-# disable root login and password auth,
-# move SSH to port 47, and apply additional security tweaks.
+# disable root login and password auth, move SSH to port 47,
+# apply additional security tweaks, and set a MOTD warning banner.
 
 set -e
 
@@ -75,6 +76,20 @@ sed -i 's/#\?UseDNS.*/UseDNS no/g' "$SSHD_CONFIG"
 echo "=== Restarting SSH service to apply changes ==="
 systemctl restart ssh
 
+echo "=== Adding MOTD warning banner ==="
+cat << 'EOF' > /etc/motd
+********************************************************************************
+** WARNING: UNAUTHORIZED ACCESS TO THIS SYSTEM IS PROHIBITED.                 **
+**                                                                            **
+** You must have explicit permission to access or configure this system.      **
+** Unauthorized attempts and actions to access or use this system may result  **
+** in civil and/or criminal penalties under applicable UK law (Computer       **
+** Misuse Act 1990), and will be prosecuted to the fullest extent possible.   **
+** All activities performed on this system may be logged, monitored, and      **
+** reviewed. By using this system, you consent to such monitoring.            **
+********************************************************************************
+EOF
+
 # Optional: Update your firewall rules (e.g., UFW) to allow connections on port 47
 # ufw allow 47/tcp
 
@@ -84,8 +99,7 @@ echo " - Root login is disabled."
 echo " - Password authentication is disabled."
 echo " - Only key-based authentication is allowed."
 echo " - MaxAuthTries is set to 3, X11Forwarding is off, and other security tweaks are applied."
-echo " - Remember to keep your private key secure."
-
+echo " - A new MOTD warning banner has been set at /etc/motd."
 echo
 echo "=== NOTE: Ensure your firewall is configured to allow port 47. ==="
 echo "=== Also verify SSH connectivity on the new port before disconnecting! ==="
