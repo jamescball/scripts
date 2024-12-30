@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 #
-# Harden SSH on Ubuntu using a given public key and additional security settings.
+# Harden SSH on Ubuntu using a given public key,
+# disable root login and password auth,
+# move SSH to port 47, and apply additional security tweaks.
 
 set -e
 
@@ -47,6 +49,9 @@ SSHD_CONFIG="/etc/ssh/sshd_config"
 # Backup the current sshd_config
 cp "$SSHD_CONFIG" "$SSHD_CONFIG.bak.$(date +%F-%T)"
 
+# Change SSH port to 47
+sed -i 's/#\?Port.*/Port 47/g' "$SSHD_CONFIG"
+
 # Disable root login
 sed -i 's/#\?PermitRootLogin.*/PermitRootLogin no/g' "$SSHD_CONFIG"
 
@@ -59,43 +64,28 @@ sed -i 's/#\?PubkeyAuthentication.*/PubkeyAuthentication yes/g' "$SSHD_CONFIG"
 # Disable challenge-response authentication
 sed -i 's/#\?ChallengeResponseAuthentication.*/ChallengeResponseAuthentication no/g' "$SSHD_CONFIG"
 
-# ------------------
-# Additional Hardening
-# ------------------
-
-# Limit the maximum number of authentication attempts per connection
+# Additional hardening
 sed -i 's/#\?MaxAuthTries.*/MaxAuthTries 3/g' "$SSHD_CONFIG"
-
-# Ignore .rhosts and .shosts files
 sed -i 's/#\?IgnoreRhosts.*/IgnoreRhosts yes/g' "$SSHD_CONFIG"
-
-# Disable host-based authentication
 sed -i 's/#\?HostbasedAuthentication.*/HostbasedAuthentication no/g' "$SSHD_CONFIG"
-
-# Disallow empty passwords
 sed -i 's/#\?PermitEmptyPasswords.*/PermitEmptyPasswords no/g' "$SSHD_CONFIG"
-
-# Disable X11 forwarding
 sed -i 's/#\?X11Forwarding.*/X11Forwarding no/g' "$SSHD_CONFIG"
-
-# Disable DNS lookups to speed up SSH connections
 sed -i 's/#\?UseDNS.*/UseDNS no/g' "$SSHD_CONFIG"
-
-# If you want to restrict SSH to a specific user or users, uncomment this:
-# echo "AllowUsers your_user" >> "$SSHD_CONFIG"
 
 echo "=== Restarting SSH service to apply changes ==="
 systemctl restart ssh
 
+# Optional: Update your firewall rules (e.g., UFW) to allow connections on port 47
+# ufw allow 47/tcp
+
 echo "=== SSH setup and hardening complete! ==="
+echo " - Listening on port 47."
 echo " - Root login is disabled."
 echo " - Password authentication is disabled."
-echo " - Public key authentication is enabled."
-echo " - Challenge-response authentication is disabled."
-echo " - MaxAuthTries is set to 3."
-echo " - IgnoreRhosts is set to yes."
-echo " - HostbasedAuthentication is disabled."
-echo " - PermitEmptyPasswords is no."
-echo " - X11Forwarding is no."
-echo " - UseDNS is no."
-echo "Remember to keep your private key secure."
+echo " - Only key-based authentication is allowed."
+echo " - MaxAuthTries is set to 3, X11Forwarding is off, and other security tweaks are applied."
+echo " - Remember to keep your private key secure."
+
+echo
+echo "=== NOTE: Ensure your firewall is configured to allow port 47. ==="
+echo "=== Also verify SSH connectivity on the new port before disconnecting! ==="
